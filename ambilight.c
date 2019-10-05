@@ -48,6 +48,9 @@ this table generator site: https://ozh.github.io/ascii-tables/
 #define TEST_LEDS_DELAY 200000   /* time between colors test */
 
 typedef unsigned char byte;   /* define byte data type */
+typedef char sbyte;   /* define byte data type */
+
+
 #define MAX_SEND_TRY 5   /* maximum tries of data send */
 
 const int port = 7879;   /* port of server */
@@ -229,6 +232,8 @@ int main(int argc, char ** argv){
 
 
 
+
+
 void set_leds(char type, byte start_led, byte stop_led, byte r, byte g, byte b){
 	char data[7];
 
@@ -245,10 +250,11 @@ void set_leds(char type, byte start_led, byte stop_led, byte r, byte g, byte b){
 }
 
 
+
 byte set_leds_with_response(char type, byte start_led, byte stop_led, byte r, byte g, byte b){
 	char data[7];   /* data for send */ 
 	char recv[8];   /* received data*/
-	byte recv_len = 0;   /* length of received data */
+	sbyte recv_len = 0;   /* length of received data */
 	int a = 0;   /* variable for everything */
 	
 	data[0] = type;
@@ -274,7 +280,7 @@ byte set_leds_with_response(char type, byte start_led, byte stop_led, byte r, by
 		recv_len = recvfrom(sockfd, recv, sizeof(recv), 0,(struct sockaddr *)&client, &l);
 		//printf("RECV LEN: %d\n", recv_len);
 		
-		if(recv_len == 0 || recv_len > sizeof(recv)){   /* timeout */
+		if(recv_len == 0 || recv_len > (sbyte)sizeof(recv)){   /* timeout */
 			puts("Timeout, resending");
 			sendto(sockfd, data, 7, 0, (struct sockaddr *)&serv, m);   /* resend data */
 		}
