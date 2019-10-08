@@ -8,4 +8,4 @@ ambilight:
 
 
 clean:
-	rm ambilight
+	rm -f ambilight
