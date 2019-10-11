@@ -247,12 +247,21 @@ int main(int argc, char ** argv){
 				//puts("HERE");
 				for(x = 0; x < width; x += xPlus){ 
 					if(x < width){
+						/*
 						c.pixel = XGetPixel(image, x, 0);   						
 						XQueryColor(d, DefaultColormap(d, DefaultScreen (d)), &c);
 
 						Rval += c.red/256;
 						Gval += c.green/256;
 						Bval += c.blue/256;
+						*/
+						unsigned long pixel = XGetPixel(image, x, 0);
+						//printf("%lu\n", pixel);
+						//place pixel in rgb array
+						Rval += (pixel >> 16) & 0xff;
+						Gval += (pixel >>  8) & 0xff;
+						Bval += (pixel >>  0) & 0xff;
+
 
 						pixels ++;
 					}
