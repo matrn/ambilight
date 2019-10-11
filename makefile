@@ -7,5 +7,9 @@ ambilight:
 	$(CC) ambilight.c -o ambilight $(CFLAGS)
 
 
+dev:
+	$(CC) development/ambilight.c -o ambilight $(CFLAGS)
+
+
 clean:
 	rm -f ambilight

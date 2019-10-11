@@ -37,15 +37,13 @@ this table generator site: https://ozh.github.io/ascii-tables/
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <X11/extensions/XShm.h>
+
 
 
 #define LEDS 82   /* number of leds */
 #define Xpix 20   /* number of pixels in X plane */
 #define Ypix 20   /* number of pixels in Y plane */
-#define SLEEP_TIME 50000   /* time delay between getting pixels */
+#define SLEEP_TIME 30000   /* time delay between getting pixels - defalt 50 000*/
 
 #define TEST_LEDS_DELAY 200000   /* time between colors test */
 
@@ -94,7 +92,7 @@ int main(int argc, char ** argv){
 	Screen*  s;   /* X screen */
 	Window rootWindow;   /* X root window */
 
-	XColor c;   /* X color */
+	//XColor c;   /* X color */
 	XImage *image;   /* X image */
 	/* -----X1 variables----- */
 
@@ -172,62 +170,6 @@ int main(int argc, char ** argv){
 
 	//printf("Xplus = %d, Yplus = %d \n", xPlus, yPlus);
 	puts("Running");
-	XShmSegmentInfo shminfo;
-	image = XShmCreateImage(d,
-		DefaultVisual(d,0), // Use a correct visual. Omitted for brevity     
-      	24,   // Determine correct depth from the visual. Omitted for brevity
-    	ZPixmap, NULL, &shminfo, width, height); 
-
-  	shminfo.shmid = shmget(IPC_PRIVATE, image->bytes_per_line * image->height, IPC_CREAT|0777);
-
-  	shminfo.shmaddr = image->data = shmat(shminfo.shmid, 0, 0);
-  	shminfo.readOnly = False;
-
-  	XShmAttach(d, &shminfo);
-
-	for(byte a = 0; a < 10; a ++){
-		
-		clock_t t; 
-		t = clock(); 
-		//image = XGetImage(d, rootWindow, 0, 0, width, height, AllPlanes, ZPixmap);   /* get display image */
-		XShmGetImage(d, rootWindow, image, 0, 0, AllPlanes);   /* get display image */
-		
-		Rval = 0;
-   		Gval = 0;
-		Bval = 0;
-
-		for(int x = 0; x < width; x += 1){
-			//c.pixel = XGetPixel(image, x, 0);   						
-			//XQueryColor(d, DefaultColormap(d, DefaultScreen (d)), &c);
-			
-			/*
-			Rval += c.red/256;
-			Gval += c.green/256;
-			Bval += c.blue/256;
-			*/
-
-			unsigned long pixel = XGetPixel(image, x, 0);
-			//printf("%lu\n", pixel);
-			//place pixel in rgb array
-        	Rval += (pixel >> 16) & 0xff;
-        	Gval += (pixel >>  8) & 0xff;
-       		Bval += (pixel >>  0) & 0xff;
-			
-			pixels ++;
-			
-
-		}
-		Rval /= pixels;
-		Gval /= pixels;
-		Bval /= pixels;
-		printf("%d %d %d \n", Rval, Gval, Bval);
-
-		t = clock() - t; 
-		double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds 
-
-		printf("took %f ms to execute \n", time_taken*1000); 
-	}
-
 
 	while(1){   /* never ending loop */
 		/* null all varaibles */
@@ -247,12 +189,21 @@ int main(int argc, char ** argv){
 				//puts("HERE");
 				for(x = 0; x < width; x += xPlus){ 
 					if(x < width){
+						/*
 						c.pixel = XGetPixel(image, x, 0);   						
 						XQueryColor(d, DefaultColormap(d, DefaultScreen (d)), &c);
 
 						Rval += c.red/256;
 						Gval += c.green/256;
 						Bval += c.blue/256;
+						*/
+						unsigned long pixel = XGetPixel(image, x, 0);
+						//printf("%lu\n", pixel);
+						//place pixel in rgb array
+						Rval += (pixel >> 16) & 0xff;
+						Gval += (pixel >>  8) & 0xff;
+						Bval += (pixel >>  0) & 0xff;
+
 
 						pixels ++;
 					}
