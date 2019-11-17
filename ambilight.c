@@ -67,6 +67,8 @@ void set_leds(char type, byte start_led, byte stop_led, byte r, byte g, byte b);
 byte set_leds_with_response(char type, byte start_led, byte stop_led, byte r, byte g, byte b);   /* send leds values with server response */
 
 byte VERBOSE = 0;
+float percentage = 1;
+byte percentage_enabled = 0;
 
 
 
@@ -97,6 +99,54 @@ int main(int argc, char ** argv){
 	/* -----X1 variables----- */
 
 
+	int opt; 
+      
+    // put ':' in the starting of the 
+    // string so that program can  
+    //distinguish between '?' and ':'  
+    while((opt = getopt(argc, argv, "hvi:p:")) != -1){  
+        switch(opt){
+        	case 'h':
+        		puts("ambilight:")
+        		puts("-v for verbose mode");
+        		puts("-i [IP]");
+        		puts("-p [0.01-1.00]");
+        		break;
+        		
+            case 'v':
+            	puts("Verbose mode enabled");
+            	VERBOSE = 1;
+            	break;
+
+            case 'i':
+            	printf("Using IP address: %s\n", optarg);
+            	strcpy(host2, optarg);
+				host2_enable = 1;
+            	break;  
+
+            case 'p':  
+                printf("Using percentage for light: %s\n", optarg);
+                percentage_enabled = 1;
+                percentage = atof(optarg);
+                break;  
+
+            case ':':  
+                printf("option needs a value\n");  
+                break;  
+            case '?':  
+                printf("unknown option: %c\n", optopt); 
+                break;  
+        }  
+    }  
+      
+    // optind is for the extra arguments 
+    // which are not parsed 
+    for(; optind < argc; optind++){      
+        printf("Extra arguments: %s\n", argv[optind]);  
+    } 
+      
+
+    /*
 	if(argc > 1 && strcmp(argv[1], "-v") == 0){
 		puts("Verbose mode enabled");
 		VERBOSE = 1;
@@ -113,6 +163,7 @@ int main(int argc, char ** argv){
 			host2_enable = 1;
 		}
 	}
+	*/
 
 
 	/* -----sock settings----- */
@@ -220,12 +271,19 @@ int main(int argc, char ** argv){
 		Gval /= pixels;
 		Bval /= pixels;
 
+		if(percentage_enabled){
+			Rval *= percentage;
+			Gval *= percentage;
+			Bval *= percentage;
+		}
+
 		if(VERBOSE) printf("Got: %d pixels\n", pixels);
 
 		if(Rval != RGBdata[0] || Gval != RGBdata[1] || Bval != RGBdata[2]){
 			RGBdata[0] = Rval;
 			RGBdata[1] = Gval;
 			RGBdata[2] = Bval;
+
 
 			if(VERBOSE) printf("%d %d %d \n", Rval, Gval, Bval);
 
