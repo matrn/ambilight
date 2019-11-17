@@ -7,7 +7,7 @@ start char,start LED,stop LED,R,G,B,stop char
 +------------+-----------+----------+-------+-------+-------+-----------+
 | start char | start LED | stop LED |   R   |   G   |   B   | stop char |
 +------------+-----------+----------+-------+-------+-------+-----------+
-| 1		     | 0-255	 | 0-255	| 0-255 | 0-255 | 0-255 | 0x03	    |
+| 1			 | 0-255	 | 0-255	| 0-255 | 0-255 | 0-255 | 0x03		|
 +------------+-----------+----------+-------+-------+-------+-----------+
 
 start chars:
@@ -100,53 +100,54 @@ int main(int argc, char ** argv){
 
 
 	int opt; 
-      
-    // put ':' in the starting of the 
-    // string so that program can  
-    //distinguish between '?' and ':'  
-    while((opt = getopt(argc, argv, "hvi:p:")) != -1){  
-        switch(opt){
-        	case 'h':
-        		puts("ambilight:")
-        		puts("-v for verbose mode");
-        		puts("-i [IP]");
-        		puts("-p [0.01-1.00]");
-        		break;
-        		
-            case 'v':
-            	puts("Verbose mode enabled");
-            	VERBOSE = 1;
-            	break;
+	  
+	// put ':' in the starting of the 
+	// string so that program can  
+	//distinguish between '?' and ':'  
+	while((opt = getopt(argc, argv, "hvi:p:")) != -1){  
+		switch(opt){
+			case 'h':
+				puts("ambilight:");
+				puts("	-v for verbose mode");
+				puts("	-i [IP]");
+				puts("	-p [0.01-1.00]");
+				exit(0);
+				break;
 
-            case 'i':
-            	printf("Using IP address: %s\n", optarg);
-            	strcpy(host2, optarg);
+			case 'v':
+				puts("Verbose mode enabled");
+				VERBOSE = 1;
+				break;
+
+			case 'i':
+				printf("Using IP address: %s\n", optarg);
+				strcpy(host2, optarg);
 				host2_enable = 1;
-            	break;  
+				break;  
 
-            case 'p':  
-                printf("Using percentage for light: %s\n", optarg);
-                percentage_enabled = 1;
-                percentage = atof(optarg);
-                break;  
+			case 'p':  
+				printf("Using percentage for light: %s\n", optarg);
+				percentage_enabled = 1;
+				percentage = atof(optarg);
+				break;  
 
-            case ':':  
-                printf("option needs a value\n");  
-                break;  
-            case '?':  
-                printf("unknown option: %c\n", optopt); 
-                break;  
-        }  
-    }  
-      
-    // optind is for the extra arguments 
-    // which are not parsed 
-    for(; optind < argc; optind++){      
-        printf("Extra arguments: %s\n", argv[optind]);  
-    } 
-      
+			case ':':  
+				printf("option needs a value\n");  
+				break;  
+			case '?':  
+				printf("unknown option: %c\n", optopt); 
+				break;  
+		}  
+	}  
+	  
+	// optind is for the extra arguments 
+	// which are not parsed 
+	for(; optind < argc; optind++){	  
+		printf("Extra arguments: %s\n", argv[optind]);  
+	} 
+	  
 
-    /*
+	/*
 	if(argc > 1 && strcmp(argv[1], "-v") == 0){
 		puts("Verbose mode enabled");
 		VERBOSE = 1;
