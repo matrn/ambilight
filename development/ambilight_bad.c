@@ -7,7 +7,7 @@ start char,start LED,stop LED,R,G,B,stop char
 +------------+-----------+----------+-------+-------+-------+-----------+
 | start char | start LED | stop LED |   R   |   G   |   B   | stop char |
 +------------+-----------+----------+-------+-------+-------+-----------+
-| 1			 | 0-255	 | 0-255	| 0-255 | 0-255 | 0-255 | 0x03		|
+| 1		     | 0-255	 | 0-255	| 0-255 | 0-255 | 0-255 | 0x03	    |
 +------------+-----------+----------+-------+-------+-------+-----------+
 
 start chars:
@@ -45,8 +45,7 @@ this table generator site: https://ozh.github.io/ascii-tables/
 #define LEDS 82   /* number of leds */
 #define Xpix 20   /* number of pixels in X plane */
 #define Ypix 20   /* number of pixels in Y plane */
-#define X_SLEEP_TIME 30000
-#define XSHM_SLEEP_TIME 10000   /* time delay between getting pixels - defalt 30 000*/
+#define SLEEP_TIME 50000   /* time delay between getting pixels */
 
 #define TEST_LEDS_DELAY 200000   /* time between colors test */
 
@@ -70,9 +69,6 @@ void set_leds(char type, byte start_led, byte stop_led, byte r, byte g, byte b);
 byte set_leds_with_response(char type, byte start_led, byte stop_led, byte r, byte g, byte b);   /* send leds values with server response */
 
 byte VERBOSE = 0;
-byte PRINT_TIME = 0;
-float percentage = 1;
-byte percentage_enabled = 0;
 
 
 
@@ -98,69 +94,11 @@ int main(int argc, char ** argv){
 	Screen*  s;   /* X screen */
 	Window rootWindow;   /* X root window */
 
-	//XColor c;   /* X color */
+	XColor c;   /* X color */
 	XImage *image;   /* X image */
-
-	byte xshm_available = 0;
 	/* -----X1 variables----- */
 
-	clock_t tm;
 
-	int opt; 
-	  
-	// put ':' in the starting of the 
-	// string so that program can  
-	//distinguish between '?' and ':'  
-	while((opt = getopt(argc, argv, "hvti:p:")) != -1){  
-		switch(opt){
-			case 'h':
-				puts("ambilight:");
-				puts("	-v for verbose mode");
-				puts("	-t print time of one display iteration (for debug)");
-				puts("	-i [IP]");
-				puts("	-p [0.01-1.00]");
-				exit(0);
-				break;
-
-			case 'v':
-				puts("Verbose mode enabled");
-				VERBOSE = 1;
-				break;
-			
-			case 't':
-				puts("Print time taken enabled");
-				PRINT_TIME = 1;
-				break;
-
-			case 'i':
-				printf("Using IP address: %s\n", optarg);
-				strcpy(host2, optarg);
-				host2_enable = 1;
-				break;  
-
-			case 'p':  
-				printf("Using percentage for light: %s\n", optarg);
-				percentage_enabled = 1;
-				percentage = atof(optarg);
-				break;  
-
-			case ':':  
-				printf("option needs a value\n");  
-				break;  
-			case '?':  
-				printf("unknown option: %c\n", optopt); 
-				break;  
-		}  
-	}  
-	  
-	// optind is for the extra arguments 
-	// which are not parsed 
-	for(; optind < argc; optind++){	  
-		printf("Extra arguments: %s\n", argv[optind]);  
-	} 
-	  
-
-	/*
 	if(argc > 1 && strcmp(argv[1], "-v") == 0){
 		puts("Verbose mode enabled");
 		VERBOSE = 1;
@@ -177,7 +115,6 @@ int main(int argc, char ** argv){
 			host2_enable = 1;
 		}
 	}
-	*/
 
 
 	/* -----sock settings----- */
@@ -227,8 +164,6 @@ int main(int argc, char ** argv){
 	height = s->height;
 
 	printf("Display width: %d and height: %d\n", width, height);
-
-	xshm_available = XShmQueryExtension(d);
 	/* -----X11----- */
 	
 
@@ -236,30 +171,26 @@ int main(int argc, char ** argv){
 	yPlus = (float)height/Ypix + 0.5;
 
 	//printf("Xplus = %d, Yplus = %d \n", xPlus, yPlus);
-	
-	if(xshm_available) printf("> XShm is available!\n");
+	puts("Running");
+	XShmSegmentInfo shminfo;
+	image = XShmCreateImage(d,
+		DefaultVisual(d,0), // Use a correct visual. Omitted for brevity     
+      	24,   // Determine correct depth from the visual. Omitted for brevity
+    	ZPixmap, NULL, &shminfo, width, height); 
 
+  	shminfo.shmid = shmget(IPC_PRIVATE, image->bytes_per_line * image->height, IPC_CREAT|0777);
 
-	if(xshm_available){
-		XShmSegmentInfo shminfo;
-		image = XShmCreateImage(d,
-			DefaultVisual(d,0), // Use a correct visual. Omitted for brevity     
-			24,   // Determine correct depth from the visual. Omitted for brevity
-			ZPixmap, NULL, &shminfo, width, height); 
+  	shminfo.shmaddr = image->data = shmat(shminfo.shmid, 0, 0);
+  	shminfo.readOnly = False;
 
-		shminfo.shmid = shmget(IPC_PRIVATE, image->bytes_per_line * image->height, IPC_CREAT|0777);
+  	XShmAttach(d, &shminfo);
 
-		shminfo.shmaddr = image->data = shmat(shminfo.shmid, 0, 0);
-		shminfo.readOnly = False;
-
-		XShmAttach(d, &shminfo);
-	}
-
-	/*
-	for(byte a = 0; a < 10; a ++){		
-		tm = clock(); 
-		//image = XGetImage(d, rootWindow, 0, 0, width, height, AllPlanes, ZPixmap);   //get display image
-		XShmGetImage(d, rootWindow, image, 0, 0, AllPlanes);   // get display image
+	for(byte a = 0; a < 10; a ++){
+		
+		clock_t t; 
+		t = clock(); 
+		//image = XGetImage(d, rootWindow, 0, 0, width, height, AllPlanes, ZPixmap);   /* get display image */
+		XShmGetImage(d, rootWindow, image, 0, 0, AllPlanes);   /* get display image */
 		
 		Rval = 0;
    		Gval = 0;
@@ -269,11 +200,11 @@ int main(int argc, char ** argv){
 			//c.pixel = XGetPixel(image, x, 0);   						
 			//XQueryColor(d, DefaultColormap(d, DefaultScreen (d)), &c);
 			
-			
-			//Rval += c.red/256;
-			//Gval += c.green/256;
-			//Bval += c.blue/256;
-			
+			/*
+			Rval += c.red/256;
+			Gval += c.green/256;
+			Bval += c.blue/256;
+			*/
 
 			unsigned long pixel = XGetPixel(image, x, 0);
 			//printf("%lu\n", pixel);
@@ -291,16 +222,12 @@ int main(int argc, char ** argv){
 		Bval /= pixels;
 		printf("%d %d %d \n", Rval, Gval, Bval);
 
-		
-		tm = clock() - tm; 
-		double time_taken = ((double)tm)/CLOCKS_PER_SEC; // in seconds 
+		t = clock() - t; 
+		double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds 
 
-		printf("took %f ms to execute \n", time_taken*1000);
+		printf("took %f ms to execute \n", time_taken*1000); 
 	}
-	*/
 
-
-	puts("Running");
 
 	while(1){   /* never ending loop */
 		/* null all varaibles */
@@ -313,17 +240,13 @@ int main(int argc, char ** argv){
 
 		pixels = 0;
 		
-		if(PRINT_TIME)  tm = clock(); 
-		//image = XGetImage(d, rootWindow, 0, 0, width, height, AllPlanes, ZPixmap);   /* get display image */
-		if(xshm_available) XShmGetImage(d, rootWindow, image, 0, 0, AllPlanes); 
 		for(y = 0; y < height; y += yPlus){					 
 			if(y < height){	
-				if(!xshm_available) image = XGetImage(d, rootWindow, 0, y, width, 1, AllPlanes, ZPixmap);   /* get display image */
 				//printf("X = %d   Y = %d\n", x, y);
+				image = XGetImage(d, rootWindow, 0, y, width, 1, AllPlanes, ZPixmap);   /* get display image */
 				//puts("HERE");
 				for(x = 0; x < width; x += xPlus){ 
 					if(x < width){
-						unsigned long pixel;
 						/*
 						c.pixel = XGetPixel(image, x, 0);   						
 						XQueryColor(d, DefaultColormap(d, DefaultScreen (d)), &c);
@@ -332,14 +255,7 @@ int main(int argc, char ** argv){
 						Gval += c.green/256;
 						Bval += c.blue/256;
 						*/
-						
-						if(xshm_available){
-							pixel = XGetPixel(image, x, y);
-						}else{
-							pixel = XGetPixel(image, x, 0);
-						}
-						
-
+						unsigned long pixel = XGetPixel(image, x, 0);
 						//printf("%lu\n", pixel);
 						//place pixel in rgb array
 						Rval += (pixel >> 16) & 0xff;
@@ -351,30 +267,16 @@ int main(int argc, char ** argv){
 					}
 
 				}
-				
+				XDestroyImage(image);
 				//XFree(image);
 
 			}	 
-		}
-		if(!xshm_available) XDestroyImage(image);
-
-		if(PRINT_TIME){
-			tm = clock() - tm; 
-			double time_taken = ((double)tm)/CLOCKS_PER_SEC; // in seconds
-
-			printf("took %f ms to execute \n", time_taken*1000);
 		}
 
 		
 		Rval /= pixels;
 		Gval /= pixels;
 		Bval /= pixels;
-
-		if(percentage_enabled){
-			Rval *= percentage;
-			Gval *= percentage;
-			Bval *= percentage;
-		}
 
 		if(VERBOSE) printf("Got: %d pixels\n", pixels);
 
@@ -383,18 +285,14 @@ int main(int argc, char ** argv){
 			RGBdata[1] = Gval;
 			RGBdata[2] = Bval;
 
-
 			if(VERBOSE) printf("%d %d %d \n", Rval, Gval, Bval);
 
 			set_leds('0', 0, LEDS - 1, Rval, Gval, Bval);   /* send leds values */
 		}else{
 			if(VERBOSE) puts("NO change, no send");
 		}
-
-		usleep(xshm_available ? X_SLEEP_TIME : XSHM_SLEEP_TIME);
+		usleep(SLEEP_TIME);
 	}
-
-	XFree(image);
 	
 	return 0;
 }

@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-lX11 -lXext -Wall -Wextra -Werror -pedantic
+CFLAGS=-lX11 -lXext -Wall -Wextra -Werror -pedantic -g
 
 all: ambilight
 
