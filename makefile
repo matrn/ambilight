@@ -1,9 +1,9 @@
 CC=gcc
-CFLAGS=-lX11 -lXext -Wall -Wextra -Werror -pedantic -g
+CFLAGS=-lX11 -lXext -Wall -Wextra -Werror -pedantic -O2 -fomit-frame-pointer #-g
 
 all: ambilight
 
-ambilight:
+ambilight: ambilight.c
 	$(CC) ambilight.c -o ambilight $(CFLAGS)
 
 

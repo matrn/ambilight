@@ -50,6 +50,7 @@ this table generator site: https://ozh.github.io/ascii-tables/
 
 #define TEST_LEDS_DELAY 200000   /* time between colors test */
 
+
 typedef unsigned char byte;   /* define byte data type */
 typedef char sbyte;   /* define byte data type */
 
@@ -77,7 +78,7 @@ byte percentage_enabled = 0;
 
 
 int main(int argc, char ** argv){   
-	int RGBdata[3];   //last R G B values
+	int RGBdata[3] = {0, 0, 0};   //last R G B values
 	int Rval = 0;   /* current R value */
 	int Gval = 0;   /* current G value */
 	int Bval = 0;   /* current B value */
@@ -99,12 +100,12 @@ int main(int argc, char ** argv){
 	Window rootWindow;   /* X root window */
 
 	//XColor c;   /* X color */
-	XImage *image;   /* X image */
+	XImage *image = NULL;   /* X image */
 
 	byte xshm_available = 0;
 	/* -----X1 variables----- */
 
-	clock_t tm;
+	clock_t tm = 0;
 
 	int opt; 
 	  
